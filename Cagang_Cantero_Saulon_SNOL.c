@@ -67,7 +67,7 @@ void lexical_analysis(char *command) {
             continue;
         }
 
-        if (command[i] == '+' || command[i] == '-' || command[i] == '*' || command[i] == '/' || command[i] == '%') {
+        if (command[i] == '+' || command[i] == '-' || command[i] == '*' || command[i] == '/' || command[i] == '%' || command[i] == '=') {
             printf("Operator: %c\n", command[i]);
             i++;
             continue;
