@@ -133,7 +133,6 @@ void lexical_analysis(char *command) {
             } else {
                 printf("Number (Integer): %s\n", number_buffer);
             }
-            i++;
         } 
         
         else {
