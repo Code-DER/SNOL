@@ -5,7 +5,19 @@
 int compare_strings(const char *str1, const char *str2);
 void lexical_analysis(char *command);
 
+typedef enum {
+    INTEGER,
+    FLOAT,
+} Type;
+
+typedef struct {
+    char name[100];
+    double value;
+    Type type;
+} Variable;
+
 int main() {
+    Variable symbol_table[100];
 
     printf("The SNOL environment is now active, you may proceed with giving your commands.\n");
     char command[100];
