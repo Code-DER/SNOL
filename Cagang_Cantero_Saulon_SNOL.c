@@ -41,9 +41,27 @@ int compare_strings(const char *str1, const char *str2) {
 
 void lexical_analysis(char *command) {
     int i = 0;
+
+    while(isspace(command[i])) {
+            i++;
+        }
+
+    if (strncmp(&command[i], "EXIT!", 5) == 0) {
+        printf("Command: EXIT!\n");
+        return;
+    } else if (strncmp(&command[i], "PRINT ", 6) == 0) {
+        printf("Command: PRINT\n");
+        i += 5;
+    } else if (strncmp(&command[i], "BEG ", 4) == 0) {
+        printf("Command: BEG\n");
+        i += 3;
+    } else {
+        
+    }
+
     printf("\n== Tokens ==\n");
     while (command[i] != '\0') {
-        
+
         if (isspace(command[i])) {
             i++;
             continue;
@@ -71,6 +89,10 @@ void lexical_analysis(char *command) {
             char number_buffer[100];
             int k = 0;
 
+            if (command[i] == '-') {
+                number_buffer[k++] = command[i++];
+            }
+            
             while(isdigit(command[i]) || command[i] == '.') {
                 number_buffer[k++] = command[i++];
             }
