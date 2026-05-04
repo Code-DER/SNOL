@@ -113,6 +113,15 @@ void lexical_analysis(char *command) {
                 }
             }
 
+            if (isalpha(command[i])) {
+                while(isalnum(command[i])) {
+                    number_buffer[k++] = command[i++];
+                }
+                number_buffer[k] = '\0';
+                printf("Error! Unknown word [%s]\n", number_buffer);
+                continue;
+            }
+
             number_buffer[k] = '\0';
 
             if (dots_counter > 1) {
