@@ -49,10 +49,10 @@ void lexical_analysis(char *command) {
     if (strncmp(&command[i], "EXIT!", 5) == 0) {
         printf("Command: EXIT!\n");
         return;
-    } else if (strncmp(&command[i], "PRINT ", 6) == 0) {
+    } else if (strncmp(&command[i], "PRINT", 5) == 0 && (isspace(command[i + 5]) || command[i + 5] == '\0')) {
         printf("Command: PRINT\n");
         i += 5;
-    } else if (strncmp(&command[i], "BEG ", 4) == 0) {
+    } else if (strncmp(&command[i], "BEG", 3) == 0 && (isspace(command[i + 3]) || command[i + 3] == '\0')) {
         printf("Command: BEG\n");
         i += 3;
     } else {
@@ -67,7 +67,7 @@ void lexical_analysis(char *command) {
             continue;
         }
 
-        if (command[i] == '+' || command[i] == '-' || command[i] == '*' || command[i] == '/' || command[i] == '%' || command[i] == '=') {
+        if (command[i] == '+' || command[i] == '*' || command[i] == '/' || command[i] == '%' || command[i] == '=') {
             printf("Operator: %c\n", command[i]);
             i++;
             continue;
@@ -85,7 +85,14 @@ void lexical_analysis(char *command) {
             printf("Variable: %s\n", variable_buffer);
         } else 
         
-        if (isdigit(command[i]) || command[i] == '.') {
+        if (isdigit(command[i]) || command[i] == '.' || command[i] == '-') {
+            
+            if (command[i] == '-' && !isdigit(command[i + 1]) && command[i + 1] != '.') {
+                printf("Operator: %c\n", command[i]);
+                i++;
+                continue;
+            }
+            
             char number_buffer[100];
             int dots_counter = 0;
             int k = 0;
@@ -109,9 +116,9 @@ void lexical_analysis(char *command) {
             number_buffer[k] = '\0';
 
             if (dots_counter > 1) {
-                printf("Invalid number format: %s\n", number_buffer);
+                printf("Error! Invalid number format: %s\n", number_buffer);
             } else if (number_buffer[0] == '.' || (number_buffer[0] == '-' && number_buffer[1] == '.')) {
-                printf("Invalid number format. Missing leading digit.\n");
+                printf("Error! Invalid number format. Missing leading digit.\n");
             } else if (dots_counter == 1) {
                 printf("Number (float): %s\n", number_buffer);
             } else {
@@ -121,7 +128,7 @@ void lexical_analysis(char *command) {
         } 
         
         else {
-            printf("Invalid character: %c\n", command[i]);
+            printf("Error! Unknown word: %c\n", command[i]);
             i++;
         }
     }
