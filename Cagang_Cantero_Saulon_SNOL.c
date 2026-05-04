@@ -137,7 +137,17 @@ void lexical_analysis(char *command) {
         } 
         
         else {
-            printf("Error! Unknown word: %c\n", command[i]);
+            char unknown_word_buffer[100];
+            int l = 0;
+            while (command[i] != '\0' && !isspace(command[i]) && !isalnum(command[i]) && !strchr("+-*/%=", command[i])) {
+                if (l < 99) {
+                    unknown_word_buffer[l++] = command[i++];
+                } else {
+                    i++;
+                }
+            }
+            unknown_word_buffer[l] = '\0';
+            printf("Error! Unknown word: [%s]\n", unknown_word_buffer);
             i++;
         }
     }
