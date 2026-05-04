@@ -89,7 +89,7 @@ void lexical_analysis(char *command) {
             char number_buffer[100];
             int dots_counter = 0;
             int k = 0;
-
+            
             if (command[i] == '-') {
                 number_buffer[k++] = command[i++];
             }
@@ -110,6 +110,8 @@ void lexical_analysis(char *command) {
 
             if (dots_counter > 1) {
                 printf("Invalid number format: %s\n", number_buffer);
+            } else if (number_buffer[0] == '.' || (number_buffer[0] == '-' && number_buffer[1] == '.')) {
+                printf("Invalid number format. Missing leading digit.\n");
             } else if (dots_counter == 1) {
                 printf("Number (float): %s\n", number_buffer);
             } else {
