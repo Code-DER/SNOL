@@ -87,18 +87,34 @@ void lexical_analysis(char *command) {
         
         if (isdigit(command[i]) || command[i] == '.') {
             char number_buffer[100];
+            int dots_counter = 0;
             int k = 0;
 
             if (command[i] == '-') {
                 number_buffer[k++] = command[i++];
             }
-            
-            while(isdigit(command[i]) || command[i] == '.') {
-                number_buffer[k++] = command[i++];
+
+            while (isdigit(command[i]) || command[i] == '.') {
+                if (command[i] == '.') {
+                    dots_counter++;
+                }
+
+                if (k < 99) {
+                    number_buffer[k++] = command[i++];
+                } else {
+                    i++;
+                }
             }
-            
+
             number_buffer[k] = '\0';
-            printf("Number: %s\n", number_buffer);
+
+            if (dots_counter > 1) {
+                printf("Invalid number format: %s\n", number_buffer);
+            } else if (dots_counter == 1) {
+                printf("Number (float): %s\n", number_buffer);
+            } else {
+                printf("Number (Integer): %s\n", number_buffer);
+            }
             i++;
         } 
         
