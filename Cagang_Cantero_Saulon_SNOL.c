@@ -6,18 +6,36 @@ int compare_strings(const char *str1, const char *str2);
 void lexical_analysis(char *command);
 
 typedef enum {
-    INTEGER,
-    FLOAT,
-} Type;
+    TOKEN_KEYWORD,
+    TOKEN_VARIABLE,
+    TOKEN_INTEGER,
+    TOKEN_FLOAT,
+    TOKEN_OPERATOR,
+    TOKEN_EQUALS,
+    TOKEN_ERROR
+} Token_Type;
+
+typedef enum {
+    TYPE_INT,
+    TYPE_FLOAT,
+    TYPE_NONE
+} SNOL_Type;
 
 typedef struct {
     char name[100];
     double value;
-    Type type;
+    SNOL_Type type;
 } Variable;
 
+typedef struct {
+    char value[100];
+    Token_Type type;
+} Token;
+
+
+
 int main() {
-    Variable symbol_table[100];
+    Token symbol_table[100];
 
     printf("The SNOL environment is now active, you may proceed with giving your commands.\n");
     char command[100];
@@ -161,5 +179,39 @@ void lexical_analysis(char *command) {
             printf("Error! Unknown word: [%s]\n", unknown_word_buffer);
             i++;
         }
+    }
+}
+
+void syntax_analysis(Token tokens[], int token_count, Variable symbolTable, int *varCount) {
+    if (token_count == 0) {
+        return;
+    }
+
+    if (tokens[0].type == TOKEN_KEYWORD && strcmp(tokens[0].value, "BEG") == 0) {
+        if (token_count < 2 && tokens[1].type == TOKEN_VARIABLE) {
+            execute_BEG_command(tokens[1].value, symbolTable, varCount);
+        } else {
+            printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
+        }
+    } else
+
+    if (tokens[0].type == TOKEN_KEYWORD && strcmp(tokens[0].value, "PRINT") == 0) {
+        if (token_count < 2 && (tokens[1].type == TOKEN_VARIABLE || tokens[1].type == TOKEN_INTEGER || tokens[1].type == TOKEN_FLOAT)) {
+            execute_PRINT_command(tokens[1], symbolTable, *varCount);
+        } else {
+            printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
+        }
+    } else 
+
+    if (token_count >= 3 && tokens[0].type == TOKEN_VARIABLE && tokens[1].type == TOKEN_EQUALS) {
+        printf("Assignment detected");
+    } else
+
+    if (token_count == 3 && tokens[1].type == TOKEN_OPERATOR) {
+        printf("Expression detected");
+    }
+
+    else {
+        printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
     }
 }
