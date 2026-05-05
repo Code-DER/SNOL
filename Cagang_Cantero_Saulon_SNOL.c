@@ -35,10 +35,14 @@ typedef struct {
 
 
 int main() {
-    Token symbol_table[100];
+    Variable symbol_table[100];
+    int variable_count = 0;
+
+    Token tokens[50];
+    int token_count = 0;
 
     printf("The SNOL environment is now active, you may proceed with giving your commands.\n");
-    char command[100];
+    char command[256];
 
     do {
         printf("\nCommand: ");
