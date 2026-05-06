@@ -94,7 +94,7 @@ int lexical_analysis(char *command, Token tokens[]) {
         return 1;
     } else if (strncmp(&command[i], "PRINT", 5) == 0 && (isspace(command[i + 5]) || command[i + 5] == '\0')) {
         strcpy(tokens[token_count].value, "PRINT");
-        tokens[token_count].type == TOKEN_KEYWORD;
+        tokens[token_count].type = TOKEN_KEYWORD;
         token_count++;
         i += 5;
     } else if (strncmp(&command[i], "BEG", 3) == 0 && (isspace(command[i + 3]) || command[i + 3] == '\0')) {
@@ -118,9 +118,10 @@ int lexical_analysis(char *command, Token tokens[]) {
             if (command[i] == '-' && isdigit(command[i + 1])) {
 
             } else {
-                tokens[token_count].value[0] == command[i];
-                tokens[token_count].value[1] == '\0';
+                tokens[token_count].value[0] = command[i];
+                tokens[token_count].value[1] = '\0';
                 tokens[token_count].type = (command[i] == '=') ? TOKEN_EQUALS : TOKEN_OPERATOR;
+                token_count++;
                 i++;
                 continue;
             }
@@ -207,7 +208,25 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
     } else 
 
     if (token_count >= 3 && tokens[0].type == TOKEN_VARIABLE && tokens[1].type == TOKEN_EQUALS) {
-        printf("Assignment detected");
+        char *destinationName = tokens[0].value;
+        double resultValue;
+        SNOL_Type resultType;
+
+        if (token_count == 3) {
+            resultValue = atof(tokens[2].value);
+            resultType = (tokens[2].type == TOKEN_FLOAT) ? TYPE_FLOAT : TYPE_INT;
+
+            int i = search_for_variable(destinationName, symbolTable, *varCount);
+            if (i == -1) {
+                strcpy(symbolTable[*varCount].name, destinationName);
+                symbolTable[*varCount].value = resultValue;
+                symbolTable[*varCount].type = resultType;
+                (*varCount)++;
+            } else {
+                symbolTable[i].value = resultValue;
+                symbolTable[i].type = resultType;
+            }
+        }
     } else
 
     if (token_count == 3 && tokens[1].type == TOKEN_OPERATOR) {
@@ -239,13 +258,14 @@ void execute_BEG_command(char *varName, Variable symbolTable[], int *varCount) {
 
     if (index == -1) {
         strcpy(symbolTable[*varCount].name, varName);
-        symbolTable[*varCount].type == TYPE_INT;
+        symbolTable[*varCount].type = (strchr(input, '.') != NULL) ? TYPE_FLOAT : TYPE_INT;
         symbolTable[*varCount].value = atof(input);
         (*varCount)++;
-        printf("(New variable [%s] stored)\n", varName);
+        // printf("(New variable [%s] stored)\n", varName);
     } else {
         symbolTable[index].value = atof(input);
-        printf("(Variable [%s] updated)\n", varName);
+        symbolTable[index].type = (strchr(input, '.') != NULL) ? TYPE_FLOAT : TYPE_INT;
+        // printf("(Variable [%s] updated)\n", varName);
     }
 }
 
