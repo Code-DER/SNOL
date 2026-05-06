@@ -36,7 +36,7 @@ int compare_strings(const char *str1, const char *str2);
 int lexical_analysis(char *command, Token tokens[]);
 void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], int *varCount);
 double resolve_value(Token tokens, Variable symbolTable[], int variable_count, SNOL_Type *type, int *error);
-double execution_assignent(Token tokens[], Variable symbolTable[], int variable_count, SNOL_Type *resultType, int *error);
+double execution_assignment(Token tokens[], Variable symbolTable[], int variable_count, SNOL_Type *resultType, int *error);
 int search_for_variable(char *name, Variable symbolTable[], int varCount);
 void execute_BEG_command(char *varName, Variable symbolTable[], int *varCount);
 void execute_PRINT_command(Token outToken, Variable symbolTable[], int varCount);
@@ -103,8 +103,8 @@ int lexical_analysis(char *command, Token tokens[]) {
 
     // Increase the counter if space is encounterd
     while(isspace(command[i])) {
-            i++;
-        }
+        i++;
+    }
 
     // Assign "EXIT!", "PRINT", and "BEG" as keywords if seen in the command
     if (strncmp(&command[i], "EXIT!", 5) == 0) {
@@ -121,8 +121,6 @@ int lexical_analysis(char *command, Token tokens[]) {
         tokens[token_count].type = TOKEN_KEYWORD;
         token_count++;
         i += 3;
-    } else {
-        
     }
 
     // Continue while the loop has not hit the terminator yet
@@ -135,21 +133,38 @@ int lexical_analysis(char *command, Token tokens[]) {
         }
 
         // Read the operators as tokens
-        if (command[i] == '+' || command[i] == '*' || command[i] == '/' || command[i] == '%' || command[i] == '=') {
-            
-            if (command[i] == '-' && isdigit(command[i + 1])) {
-                // Insert lang here ang mga logic
-            } else {
-                tokens[token_count].value[0] = command[i];
-                tokens[token_count].value[1] = '\0';
-                // Assign the operator as Equal type if it is '='
-                tokens[token_count].type = (command[i] == '=') ? TOKEN_EQUALS : TOKEN_OPERATOR;
+        if (strchr("=+*/%", command[i]) || command[i] == '-') {
+
+            // FIX: correct negative number handling
+            if (command[i] == '-' && (isdigit(command[i+1]) || command[i+1] == '.')) {
+                int k = 0;
+                int dots_counter = 0;
+
+                tokens[token_count].value[k++] = command[i++];
+
+                while (isdigit(command[i]) || command[i] == '.') {
+                    if (command[i] == '.') dots_counter++;
+                    tokens[token_count].value[k++] = command[i++];
+                }
+
+                tokens[token_count].value[k] = '\0';
+                tokens[token_count].type =
+                    (dots_counter == 1) ? TOKEN_FLOAT : TOKEN_INTEGER;
+
                 token_count++;
-                i++;
                 continue;
             }
-        } 
-        
+
+            tokens[token_count].value[0] = command[i];
+            tokens[token_count].value[1] = '\0';
+            tokens[token_count].type =
+                (command[i] == '=') ? TOKEN_EQUALS : TOKEN_OPERATOR;
+
+            token_count++;
+            i++;
+            continue;
+        }
+
         // Read the words as variables
         if (isalpha(command[i])) {
             int j = 0;
@@ -159,24 +174,24 @@ int lexical_analysis(char *command, Token tokens[]) {
                 tokens[token_count].value[j++] = command[i++];
             }
             tokens[token_count].value[j] = '\0';
-            // Assign type as variable
-            tokens[token_count].type = TOKEN_VARIABLE;
+
+            // FIX: keyword detection (important)
+            if (strcmp(tokens[token_count].value, "PRINT") == 0 ||
+                strcmp(tokens[token_count].value, "BEG") == 0 ||
+                strcmp(tokens[token_count].value, "EXIT!") == 0) {
+                tokens[token_count].type = TOKEN_KEYWORD;
+            } else {
+                tokens[token_count].type = TOKEN_VARIABLE;
+            }
+
             token_count++;
-        } else 
-        
-        // Read numbers 
-        if (isdigit(command[i]) || command[i] == '.' || command[i] == '-') {
+        }
+
+        // Read numbers
+        else if (isdigit(command[i]) || command[i] == '.') {
             int k = 0;
             int dots_counter = 0;
 
-            // Handle negative numbers with decimal points
-            if (command[i] == '-' && !isdigit(command[i + 1]) && command[i + 1] != '.') {
-                printf("Operator: %c\n", command[i]);
-                i++;
-                continue;
-            }
-
-            // Handle decimal numbers
             while (isdigit(command[i]) || command[i] == '.') {
                 if (command[i] == '.') {
                     dots_counter++;
@@ -211,9 +226,9 @@ int lexical_analysis(char *command, Token tokens[]) {
                     i++;
                 }
             }
+
             unknown_word_buffer[l] = '\0';
             printf("Error! Unknown word: [%s]\n", unknown_word_buffer);
-            i++;
         }
     }
 
@@ -238,51 +253,29 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
             // Print unknown command if different keyword is inputted
             printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         }
-    } else
+        return;
+    }
 
     // Call the PRINT function
     if (tokens[0].type == TOKEN_KEYWORD && strcmp(tokens[0].value, "PRINT") == 0) {
-        if (token_count == 2 && (tokens[1].type == TOKEN_VARIABLE || tokens[1].type == TOKEN_INTEGER || tokens[1].type == TOKEN_FLOAT)) {
-            // Calls to execute the PRINT function
+        if (token_count == 2) {
             execute_PRINT_command(tokens[1], symbolTable, *varCount);
         } else {
             // Print unknown command if different keyword is inputted
             printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         }
-    } else 
+        return;
+    }
 
-    // Assignment operation
     if (token_count >= 3 && tokens[0].type == TOKEN_VARIABLE && tokens[1].type == TOKEN_EQUALS) {
-        char *destinationName = tokens[0].value;
-        double resultValue;
-        SNOL_Type resultType;
+        execute_assignment(tokens, token_count, symbolTable, varCount);
+        return;
+    }
 
-        // If token count is 3, it reads it as an assignment operation
-        if (token_count == 3) {
-            resultValue = atof(tokens[2].value);
-            resultType = (tokens[2].type == TOKEN_FLOAT) ? TYPE_FLOAT : TYPE_INT;
-
-            // Search for the variable in the symbol table
-            int i = search_for_variable(destinationName, symbolTable, *varCount);
-            if (i == -1) {
-                // If it is not defined yet, it is defined at the next slot
-                strcpy(symbolTable[*varCount].name, destinationName);
-                symbolTable[*varCount].value = resultValue;
-                symbolTable[*varCount].type = resultType;
-                (*varCount)++;
-            } else {
-                // If it is found, the value and type is updated
-                symbolTable[i].value = resultValue;
-                symbolTable[i].type = resultType;
-            }
-        }
-    } else
-
-    // Expression Operation
     if (token_count == 3 && tokens[1].type == TOKEN_OPERATOR) {
         int error = 0;
         SNOL_Type type;
-        execute_assignment(tokens, token_count, symbolTable, varCount);
+        execution_assignment(tokens, symbolTable, *varCount, &type, &error);
         return;
     }
 
@@ -290,7 +283,9 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
     printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
 }
 
+// resolve_value (UNCHANGED STRUCTURE)
 double resolve_value(Token tokens, Variable symbolTable[], int variable_count, SNOL_Type *type, int *error) {
+
     if (tokens.type == TOKEN_INTEGER) {
         *type = TYPE_INT;
         return atof(tokens.value);
@@ -302,6 +297,7 @@ double resolve_value(Token tokens, Variable symbolTable[], int variable_count, S
     }
 
     if (tokens.type == TOKEN_VARIABLE) {
+
         int index = search_for_variable(tokens.value, symbolTable, variable_count);
 
         if (index == -1) {
@@ -318,7 +314,9 @@ double resolve_value(Token tokens, Variable symbolTable[], int variable_count, S
     return 0;
 }
 
-double execution_assignent(Token tokens[], Variable symbolTable[], int variable_count, SNOL_Type *resultType, int *error) {
+// execution_assignment (UNCHANGED LOGIC FIX ONLY SAFE)
+double execution_assignment(Token tokens[], Variable symbolTable[], int variable_count, SNOL_Type *resultType, int *error) {
+
     SNOL_Type leftType, rightType;
 
     double leftValue = resolve_value(tokens[0], symbolTable, variable_count, &leftType, error);
@@ -335,20 +333,19 @@ double execution_assignent(Token tokens[], Variable symbolTable[], int variable_
 
     *resultType = leftType;
 
-    char operation = tokens[1].value[0];
+    switch (tokens[1].value[0]) {
+        case '+': return leftValue + rightValue;
+        case '-': return leftValue - rightValue;
+        case '*': return leftValue * rightValue;
+        case '/': return leftValue / rightValue;
 
-    if (operation == '+') return leftValue + rightValue;
-    if (operation == '-') return leftValue - rightValue;
-    if (operation == '*') return leftValue * rightValue;
-    if (operation == '/') return leftValue / rightValue;
-
-    if (operation == '%') {
-        if (leftType != TYPE_INT) {
-            printf("SNOL> Error! Modulo operation only allow integer type.\n");
-            *error = 1;
-            return 0;
-        }
-        return (int)leftValue % (int)rightValue;
+        case '%':
+            if (leftType != TYPE_INT) {
+                printf("SNOL> Error! Modulo operation only allow integer type.\n");
+                *error = 1;
+                return 0;
+            }
+            return (int)leftValue % (int)rightValue;
     }
 
     *error = 1;
@@ -359,10 +356,10 @@ double execution_assignent(Token tokens[], Variable symbolTable[], int variable_
 int search_for_variable(char *name, Variable symbolTable[], int varCount) {
     for (int i = 0; i < varCount; i++) {
         if (strcmp(symbolTable[i].name, name) == 0) {
-            return i; // Return index if found
+            return i;
         }
     }
-    return -1; // Return -1 if the variable is not yet defined
+    return -1;
 }
 
 // Execute the 'BEG' command function
@@ -411,22 +408,18 @@ void execute_PRINT_command(Token outToken, Variable symbolTable[], int varCount)
     }
 }
 
+// Assignment
 void execute_assignment(Token tokens[], int token_count, Variable symbolTable[], int *varCount) {
+
     int error = 0;
     SNOL_Type type;
     double result;
 
-    // var = value
     if (token_count == 3) {
         result = resolve_value(tokens[2], symbolTable, *varCount, &type, &error);
-    }
-
-    // var = expr1 op expr2
-    else if (token_count == 5) {
-        result = execution_assignent(&tokens[2], symbolTable, *varCount, &type, &error);
-    }
-
-    else {
+    } else if (token_count == 5) {
+        result = execution_assignment(&tokens[2], symbolTable, *varCount, &type, &error);
+    } else {
         printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         return;
     }
