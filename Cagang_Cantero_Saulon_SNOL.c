@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+// Symbol Tables
 typedef enum {
     TOKEN_KEYWORD,
     TOKEN_VARIABLE,
@@ -30,6 +31,7 @@ typedef struct {
     Token_Type type;
 } Token;
 
+// Function Prototypes
 int compare_strings(const char *str1, const char *str2);
 int lexical_analysis(char *command, Token tokens[]);
 void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], int *varCount);
@@ -37,28 +39,36 @@ int search_for_variable(char *name, Variable symbolTable[], int varCount);
 void execute_BEG_command(char *varName, Variable symbolTable[], int *varCount);
 void execute_PRINT_command(Token outToken, Variable symbolTable[], int varCount);
 
+// Main Function
 int main() {
+    // Initialize the symbol table
     Variable symbol_table[100];
     int variable_count = 0;
 
+    // Initialize the tokens
     Token tokens[50];
     int token_count = 0;
 
     printf("The SNOL environment is now active, you may proceed with giving your commands.\n");
     char command[256];
 
+    // Loop for the command line
     do {
         printf("\nCommand: ");
+        // Get the user input
         if(fgets(command, sizeof(command), stdin)) {
             command[strcspn(command, "\n")] = '\0';
         }
         
+        // Count the total tokens though the lexical analysis function
         token_count = lexical_analysis(command, tokens);
 
+        // If "EXIT!" is inputted, program is terminated.
         if (token_count > 0 && compare_strings(command, "EXIT!") == 0) {
             break;
         }
 
+        // If token count is greater than 0, move to the syntax analysis function
         if (token_count > 0) {
             syntax_analysis(tokens, token_count, symbol_table, &variable_count);
         }
@@ -69,25 +79,31 @@ int main() {
     return 0;
 }
 
+// Function to compare strings
 int compare_strings(const char *str1, const char *str2) {
     int i = 0;
+    // Compare each character in the string
     while (str1[i] != '\0' && str2[i] != '\0') {
         if (str1[i] != str2[i]) {
             break;
         }
         i++;
     }
+    // Return their difference
     return (unsigned char)str1[i] - (unsigned char)str2[i];
 }
 
+// Lexical analysis functions
 int lexical_analysis(char *command, Token tokens[]) {
     int i = 0;
     int token_count = 0;
 
+    // Increase the counter if space is encounterd
     while(isspace(command[i])) {
             i++;
         }
 
+    // Assign "EXIT!", "PRINT", and "BEG" as keywords if seen in the command
     if (strncmp(&command[i], "EXIT!", 5) == 0) {
         strcpy(tokens[token_count].value, "EXIT!");
         tokens[token_count].type = TOKEN_KEYWORD;
@@ -106,20 +122,24 @@ int lexical_analysis(char *command, Token tokens[]) {
         
     }
 
+    // Continue while the loop has not hit the terminator yet
     while (command[i] != '\0') {
 
+        // Continue if spaces are read
         if (isspace(command[i])) {
             i++;
             continue;
         }
 
+        // Read the operators as tokens
         if (command[i] == '+' || command[i] == '*' || command[i] == '/' || command[i] == '%' || command[i] == '=') {
             
             if (command[i] == '-' && isdigit(command[i + 1])) {
-
+                // Insert lang here ang mga logic
             } else {
                 tokens[token_count].value[0] = command[i];
                 tokens[token_count].value[1] = '\0';
+                // Assign the operator as Equal type if it is '='
                 tokens[token_count].type = (command[i] == '=') ? TOKEN_EQUALS : TOKEN_OPERATOR;
                 token_count++;
                 i++;
@@ -127,26 +147,33 @@ int lexical_analysis(char *command, Token tokens[]) {
             }
         } 
         
+        // Read the words as variables
         if (isalpha(command[i])) {
             int j = 0;
 
+            // Read the variables with numbers
             while(isalnum(command[i])) {
                 tokens[token_count].value[j++] = command[i++];
             }
             tokens[token_count].value[j] = '\0';
+            // Assign type as variable
             tokens[token_count].type = TOKEN_VARIABLE;
             token_count++;
         } else 
         
+        // Read numbers 
         if (isdigit(command[i]) || command[i] == '.' || command[i] == '-') {
             int k = 0;
             int dots_counter = 0;
+
+            // Handle negative numbers with decimal points
             if (command[i] == '-' && !isdigit(command[i + 1]) && command[i + 1] != '.') {
                 printf("Operator: %c\n", command[i]);
                 i++;
                 continue;
             }
 
+            // Handle decimal numbers
             while (isdigit(command[i]) || command[i] == '.') {
                 if (command[i] == '.') {
                     dots_counter++;
@@ -154,6 +181,7 @@ int lexical_analysis(char *command, Token tokens[]) {
                 tokens[token_count].value[k++] = command[i++];
             }
             tokens[token_count].value[k] = '\0';
+            // Assign token as a float
             tokens[token_count].type = (dots_counter == 1) ? TOKEN_FLOAT : TOKEN_INTEGER;
             token_count++;
 
@@ -168,9 +196,11 @@ int lexical_analysis(char *command, Token tokens[]) {
             // }
         } 
         
+        // Identifies unknown words
         else {
             char unknown_word_buffer[100];
             int l = 0;
+            // PLace in a buffer to identify the unknown
             while (command[i] != '\0' && !isspace(command[i]) && !isalnum(command[i]) && !strchr("+-*/%=", command[i])) {
                 if (l < 99) {
                     unknown_word_buffer[l++] = command[i++];
@@ -183,101 +213,131 @@ int lexical_analysis(char *command, Token tokens[]) {
             i++;
         }
     }
+
+    // Return the final token count
     return token_count;
 }
 
+// Syntax analysis function
 void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], int *varCount) {
+
+    // Return if there are no tokens
     if (token_count == 0) {
         return;
     }
 
+    // Call the BEG function
     if (tokens[0].type == TOKEN_KEYWORD && strcmp(tokens[0].value, "BEG") == 0) {
         if (token_count == 2 && tokens[1].type == TOKEN_VARIABLE) {
+            // Calls to execute the BEG function
             execute_BEG_command(tokens[1].value, symbolTable, varCount);
         } else {
+            // Print unknown command if different keyword is inputted
             printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         }
     } else
 
+    // Call the PRINT function
     if (tokens[0].type == TOKEN_KEYWORD && strcmp(tokens[0].value, "PRINT") == 0) {
         if (token_count == 2 && (tokens[1].type == TOKEN_VARIABLE || tokens[1].type == TOKEN_INTEGER || tokens[1].type == TOKEN_FLOAT)) {
+            // Calls to execute the PRINT function
             execute_PRINT_command(tokens[1], symbolTable, *varCount);
         } else {
+            // Print unknown command if different keyword is inputted
             printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         }
     } else 
 
+    // Assignment operation
     if (token_count >= 3 && tokens[0].type == TOKEN_VARIABLE && tokens[1].type == TOKEN_EQUALS) {
         char *destinationName = tokens[0].value;
         double resultValue;
         SNOL_Type resultType;
 
+        // If token count is 3, it reads it as an assignment operation
         if (token_count == 3) {
             resultValue = atof(tokens[2].value);
             resultType = (tokens[2].type == TOKEN_FLOAT) ? TYPE_FLOAT : TYPE_INT;
 
+            // Search for the variable in the symbol table
             int i = search_for_variable(destinationName, symbolTable, *varCount);
             if (i == -1) {
+                // If it is not defined yet, it is defined at the next slot
                 strcpy(symbolTable[*varCount].name, destinationName);
                 symbolTable[*varCount].value = resultValue;
                 symbolTable[*varCount].type = resultType;
                 (*varCount)++;
             } else {
+                // If it is found, the value and type is updated
                 symbolTable[i].value = resultValue;
                 symbolTable[i].type = resultType;
             }
         }
     } else
 
+    // Expression Operation (TO BE CODED PA)
     if (token_count == 3 && tokens[1].type == TOKEN_OPERATOR) {
         printf("Expression detected");
     }
 
     else {
+        // Print unknown command for other types of input
         printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
     }
 }
 
+// Search for a variable function
 int search_for_variable(char *name, Variable symbolTable[], int varCount) {
     for (int i = 0; i < varCount; i++) {
         if (strcmp(symbolTable[i].name, name) == 0) {
-            return i;
+            return i; // Return index if found
         }
     }
-    return -1;
+    return -1; // Return -1 if the variable is not yet defined
 }
 
+// Execute the 'BEG' command function
 void execute_BEG_command(char *varName, Variable symbolTable[], int *varCount) {
-    printf("SNOL> Please enter value for [%s]\n", varName);
-
+    // Asks for user input
     char input[50];
+    printf("SNOL> Please enter value for [%s]\n", varName);
     printf("Input: ");
+    // Stores user input in 'input'
     fgets(input, sizeof(input), stdin);
 
-    int index = search_for_variable(varName, symbolTable, *varCount);
+    // Search for the variable in the Symbol Table
+    int i = search_for_variable(varName, symbolTable, *varCount);
 
-    if (index == -1) {
+    if (i == -1) {
+        // If the variable is not yet defined, it is stored in the next slot
         strcpy(symbolTable[*varCount].name, varName);
         symbolTable[*varCount].type = (strchr(input, '.') != NULL) ? TYPE_FLOAT : TYPE_INT;
         symbolTable[*varCount].value = atof(input);
         (*varCount)++;
         // printf("(New variable [%s] stored)\n", varName);
     } else {
-        symbolTable[index].value = atof(input);
-        symbolTable[index].type = (strchr(input, '.') != NULL) ? TYPE_FLOAT : TYPE_INT;
+        // If the variable is defined, its value and type is updated
+        symbolTable[i].value = atof(input);
+        symbolTable[i].type = (strchr(input, '.') != NULL) ? TYPE_FLOAT : TYPE_INT;
         // printf("(Variable [%s] updated)\n", varName);
     }
 }
 
+// Execute the 'PRINT' command function
 void execute_PRINT_command(Token outToken, Variable symbolTable[], int varCount) {
+    // If the token to be printed is a variable, print it out
     if (outToken.type == TOKEN_VARIABLE) {
-        int index = search_for_variable(outToken.value, symbolTable, varCount);
-        if (index != -1) {
-            printf("SNOL> [%s] = %g\n", symbolTable[index].name, symbolTable[index].value);
+        // Search for the variable if it is defined
+        int i = search_for_variable(outToken.value, symbolTable, varCount);
+        if (i != -1) {
+            // If it is found, print the value of the variable
+            printf("SNOL> [%s] = %g\n", symbolTable[i].name, symbolTable[i].value);
         } else {
+            // If it is not defined, print an error.
             printf("SNOL> Error! [%s] is not defined!\n", outToken.value);
         }
     } else {
+        // Print the value of the variable
         printf("SNOL> %s\n", outToken.value);
     }
 }
