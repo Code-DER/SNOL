@@ -267,14 +267,18 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
         return;
     }
 
+    // Execute assignment statements
     if (token_count >= 3 && tokens[0].type == TOKEN_VARIABLE && tokens[1].type == TOKEN_EQUALS) {
         execute_assignment(tokens, token_count, symbolTable, varCount);
         return;
     }
 
+    // Execute standalone arithmetic expressions
     if (token_count == 3 && tokens[1].type == TOKEN_OPERATOR) {
         int error = 0;
         SNOL_Type type;
+
+        // Calls the arithmetic execution function
         execution_assignment(tokens, symbolTable, *varCount, &type, &error);
         return;
     }
@@ -288,62 +292,75 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
     printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
 }
 
-// resolve_value (UNCHANGED STRUCTURE)
+// resolve_value function
 double resolve_value(Token tokens, Variable symbolTable[], int variable_count, SNOL_Type *type, int *error) {
 
+    // Resolve integer tokens
     if (tokens.type == TOKEN_INTEGER) {
         *type = TYPE_INT;
         return atof(tokens.value);
     }
 
+    // Resolve float tokens
     if (tokens.type == TOKEN_FLOAT) {
         *type = TYPE_FLOAT;
         return atof(tokens.value);
     }
 
+    // Resolve variable tokens
     if (tokens.type == TOKEN_VARIABLE) {
 
+        // Search if the variable exists in the Symbol Table
         int index = search_for_variable(tokens.value, symbolTable, variable_count);
 
+        // Print error message if the variable is undefined
         if (index == -1) {
             printf("SNOL> Error! [%s] is not defined!\n", tokens.value);
             *error = 1;
             return 0;
         }
 
+        // Return the variable's type and value
         *type = symbolTable[index].type;
         return symbolTable[index].value;
     }
 
+    // Return error for invalid token types
     *error = 1;
     return 0;
 }
 
-// execution_assignment (UNCHANGED LOGIC FIX ONLY SAFE)
+// execution_assignment function - execute arithmetic operations
 double execution_assignment(Token tokens[], Variable symbolTable[], int variable_count, SNOL_Type *resultType, int *error) {
 
     SNOL_Type leftType, rightType;
 
+    // Resolve the left operand value
     double leftValue = resolve_value(tokens[0], symbolTable, variable_count, &leftType, error);
     if (*error) return 0;
 
+    // Resolve the right operand value
     double rightValue = resolve_value(tokens[2], symbolTable, variable_count, &rightType, error);
     if (*error) return 0;
 
+    // Ensure both operands are of the same type
     if (leftType != rightType) {
         printf("SNOL> Error! Operands must be of the same type in an arithmetic operation!\n");
         *error = 1;
         return 0;
     }
 
+    // Store the resulting type
     *resultType = leftType;
 
+    // Perform the arithmetic operation
     switch (tokens[1].value[0]) {
         case '+': return leftValue + rightValue;
         case '-': return leftValue - rightValue;
         case '*': return leftValue * rightValue;
         case '/': return leftValue / rightValue;
 
+        // Ensure modulo only accepts integer operands
         case '%':
             if (leftType != TYPE_INT) {
                 printf("SNOL> Error! Modulo operation only allow integer type.\n");
@@ -353,6 +370,7 @@ double execution_assignment(Token tokens[], Variable symbolTable[], int variable
             return (int)leftValue % (int)rightValue;
     }
 
+    // Return error for unsupported operators
     *error = 1;
     return 0;
 }
@@ -420,24 +438,38 @@ void execute_assignment(Token tokens[], int token_count, Variable symbolTable[],
     SNOL_Type type;
     double result;
 
+    // Handle direct value assignments
     if (token_count == 3) {
+        // Resolve the value to be assigned
         result = resolve_value(tokens[2], symbolTable, *varCount, &type, &error);
+    
+    // Handle arithmetic expression assignments
     } else if (token_count == 5) {
+        // Execute the arithmetic operation
         result = execution_assignment(&tokens[2], symbolTable, *varCount, &type, &error);
+    
     } else {
+        // Print error for invalid assignment format
         printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
         return;
     }
 
+    // Stop execution if an error occurred
     if (error) return;
 
+    // Search if the variable already exists
     int index = search_for_variable(tokens[0].value, symbolTable, *varCount);
 
+    // Create a new variable if it does not exist
     if (index == -1) {
         strcpy(symbolTable[*varCount].name, tokens[0].value);
         symbolTable[*varCount].value = result;
         symbolTable[*varCount].type = type;
+
+        // Increment the variable counter
         (*varCount)++;
+
+    // Update the existing variable
     } else {
         symbolTable[index].value = result;
         symbolTable[index].type = type;
