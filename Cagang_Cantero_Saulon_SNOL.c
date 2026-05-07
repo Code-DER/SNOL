@@ -279,6 +279,11 @@ void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], in
         return;
     }
 
+    // Ignore standalone variables with no command
+    if (token_count == 1 && tokens[0].type == TOKEN_VARIABLE) {
+        return;
+    }
+
     // Print unknown command for other types of input
     printf("SNOL> Unknown command! Does not match any valid command of the language.\n");
 }
