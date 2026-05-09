@@ -32,7 +32,6 @@ typedef struct {
 } Token;
 
 // Function Prototypes
-int compare_strings(const char *str1, const char *str2);
 int lexical_analysis(char *command, Token tokens[]);
 void syntax_analysis(Token tokens[], int token_count, Variable symbolTable[], int *varCount);
 double resolve_value(Token tokens, Variable symbolTable[], int variable_count, SNOL_Type *type, int *error);
@@ -67,7 +66,7 @@ int main() {
         token_count = lexical_analysis(command, tokens);
 
         // If "EXIT!" is inputted, program is terminated.
-        if (token_count > 0 && compare_strings(command, "EXIT!") == 0) {
+        if (token_count > 0 && strcmp(command, "EXIT!") == 0) {
             break;
         }
 
@@ -76,24 +75,10 @@ int main() {
             syntax_analysis(tokens, token_count, symbol_table, &variable_count);
         }
 
-    } while (compare_strings(command, "EXIT!") != 0);
+    } while (strcmp(command, "EXIT!") != 0);
     
     printf("Interpreter is now terminated...");
     return 0;
-}
-
-// Function to compare strings
-int compare_strings(const char *str1, const char *str2) {
-    int i = 0;
-    // Compare each character in the string
-    while (str1[i] != '\0' && str2[i] != '\0') {
-        if (str1[i] != str2[i]) {
-            break;
-        }
-        i++;
-    }
-    // Return their difference
-    return (unsigned char)str1[i] - (unsigned char)str2[i];
 }
 
 // Lexical analysis functions
