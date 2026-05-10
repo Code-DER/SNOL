@@ -188,15 +188,6 @@ int lexical_analysis(char *command, Token tokens[]) {
             tokens[token_count].type = (dots_counter == 1) ? TOKEN_FLOAT : TOKEN_INTEGER;
             token_count++;
 
-            // if (dots_counter > 1) {
-            //     printf("Error! Invalid number format: %s\n", );
-            // } else if (number_buffer[0] == '.' || (number_buffer[0] == '-' && number_buffer[1] == '.')) {
-            //     printf("Error! Invalid number format. Missing leading digit.\n");
-            // } else if (dots_counter == 1) {
-            //     printf("Number (float): %s\n", number_buffer);
-            // } else {
-            //     printf("Number (Integer): %s\n", number_buffer);
-            // }
         } 
         
         // Identifies unknown words
