@@ -1,3 +1,16 @@
+/*
+PROGRAMMING PROJECT: SNOL (Simple Natural Object Language) Interpreter
+
+Description:
+This program implements a simple interpreter for the SNOL language, which allows users to define variables, perform arithmetic operations, and print results. The interpreter supports basic commands such as BEG for variable input, PRINT for output, and EXIT! to terminate the program. It also includes error handling for undefined variables and invalid commands.
+
+Developed by:
+1. Xander Jay C. Cagang
+2. Joe Hanna S. Cantero
+3. Anna Faye M. Saulon
+*/
+
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
